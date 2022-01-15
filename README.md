@@ -1,2 +1,2 @@
 # walle
-walle is a tool to manage Kubernetes YAML files format
+Walle is a tool to clone all projects of a GitLab group
