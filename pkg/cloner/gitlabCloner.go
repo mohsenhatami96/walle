@@ -15,7 +15,8 @@ import (
 	"github.com/mohsenhatami96/walle/pkg/dhttp"
 )
 
-type Cloner struct {
+type GitlabCloner struct {
+	clonePath     string //TODO: implement
 	url           string
 	token         string
 	apiURL        string
@@ -38,8 +39,8 @@ type project struct {
 	HttpURL string `json:"http_url_to_repo"`
 }
 
-func New(url, token, username string, sshAuth bool, sshPrivateKeyPath string) *Cloner {
-	return &Cloner{
+func New(url, token, username string, sshAuth bool, sshPrivateKeyPath string) *GitlabCloner {
+	return &GitlabCloner{
 		url:           url,
 		token:         token,
 		apiURL:        url + "/api/v4",
@@ -49,7 +50,7 @@ func New(url, token, username string, sshAuth bool, sshPrivateKeyPath string) *C
 	}
 }
 
-func (cloner *Cloner) CloneAll() {
+func (cloner *GitlabCloner) CloneAll() {
 	allGroups := cloner.getAllGroups()
 	printGroups(allGroups)
 	userWantedGroups := getUserWantedGroups(allGroups)
@@ -88,7 +89,17 @@ func (cloner *Cloner) CloneAll() {
 	}
 }
 
-func (cloner *Cloner) getAllGroups() []group {
+func (cloner *GitlabCloner) CloneProject(ID int)                {} //TODO: implement
+func (cloner *GitlabCloner) CloneGroupProjects(ID int)          {} //TODO: implement
+func (cloner *GitlabCloner) CloneGroupProjectsRecursive(ID int) {} //TODO: implement
+func (cloner *GitlabCloner) CloneGroups(IDs []int)              {} //TODO: implement
+func (cloner *GitlabCloner) CloneGroupsRecursive(IDs int)       {} //TODO: implement
+func (cloner *GitlabCloner) GetGroupList()                      {} //TODO: implement
+func (cloner *GitlabCloner) GetProjectsOfGroup(ID int) []interface{} {
+	return make([]interface{}, 0)
+} //TODO: implement
+
+func (cloner *GitlabCloner) getAllGroups() []group {
 	resp, err := dhttp.Getter(cloner.apiURL+"/groups?per_page=100", &cloner.token)
 	if err != nil {
 		fmt.Errorf(err.Error())
@@ -158,7 +169,7 @@ func printGroups(groups []group) {
 	}
 }
 
-func (cloner *Cloner) getProjectsOfGroup(wantedGroup group) []project {
+func (cloner *GitlabCloner) getProjectsOfGroup(wantedGroup group) []project {
 	projects := make([]project, 0)
 	path := fmt.Sprintf("/groups/%d/projects?per_page=100", wantedGroup.ID)
 	// fmt.Println(path)
@@ -176,7 +187,7 @@ func (cloner *Cloner) getProjectsOfGroup(wantedGroup group) []project {
 	return projects
 }
 
-func (cloner *Cloner) cloneProjects(projects []project) {
+func (cloner *GitlabCloner) cloneProjects(projects []project) {
 	privateKeyFile := "/home/blood/.ssh/id_ed25519"
 	_, err := os.Stat(privateKeyFile)
 	if err != nil {

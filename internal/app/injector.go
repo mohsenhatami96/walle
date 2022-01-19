@@ -9,10 +9,6 @@ type Injector struct {
 	Cloner services.Cloner
 }
 
-func InjectCloner(url string, token string, username string, sshAuth bool, sshPrivKeyPath string) {
-
-}
-
 func (injector *Injector) Inject(config Config) {
 	injector.Cloner = cloner.New(
 		config.GitURL,
