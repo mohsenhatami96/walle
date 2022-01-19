@@ -1,4 +1,4 @@
-module github.com/mohsenhatami96/dobby
+module github.com/mohsenhatami96/walle
 
 go 1.17
 

@@ -4,12 +4,12 @@ import (
 	"log"
 
 	"github.com/kelseyhightower/envconfig"
-	"github.com/mohsenhatami96/dobby/internal/app"
+	"github.com/mohsenhatami96/walle/internal/app"
 )
 
 func main() {
 	var config app.Config
-	err := envconfig.Process("dobby", &config)
+	err := envconfig.Process("walle", &config)
 	if err != nil {
 		log.Fatal(err.Error())
 	}

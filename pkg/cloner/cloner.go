@@ -12,13 +12,16 @@ import (
 
 	git "github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
-	"github.com/mohsenhatami96/dobby/pkg/dhttp"
+	"github.com/mohsenhatami96/walle/pkg/dhttp"
 )
 
 type Cloner struct {
-	url    string
-	token  string
-	apiURL string
+	url           string
+	token         string
+	apiURL        string
+	sshAuth       bool
+	sshPrivateKey string
+	username      string
 }
 
 type group struct {
@@ -35,15 +38,22 @@ type project struct {
 	HttpURL string `json:"http_url_to_repo"`
 }
 
-func New(url string, token string) *Cloner {
-	return &Cloner{url: url, token: token, apiURL: url + "/api/v4"}
+func New(url, token, username string, sshAuth bool, sshPrivateKeyPath string) *Cloner {
+	return &Cloner{
+		url:           url,
+		token:         token,
+		apiURL:        url + "/api/v4",
+		sshAuth:       sshAuth,
+		sshPrivateKey: sshPrivateKeyPath,
+		username:      username,
+	}
 }
 
 func (cloner *Cloner) CloneAll() {
 	allGroups := cloner.getAllGroups()
 	printGroups(allGroups)
 	userWantedGroups := getUserWantedGroups(allGroups)
-	if err := os.Mkdir("projects", os.ModePerm); err != nil {
+	if err := os.MkdirAll("projects", os.ModePerm); err != nil {
 		log.Fatal(err)
 	}
 	currDir, err := os.Getwd()
@@ -55,11 +65,11 @@ func (cloner *Cloner) CloneAll() {
 		log.Fatal(err)
 	}
 	for _, group := range userWantedGroups {
-		err = os.Mkdir(group.Name, os.ModePerm)
+		err = os.MkdirAll(getGroupPath(group), os.ModePerm)
 		if err != nil {
 			log.Fatal(err)
 		}
-		err = os.Chdir(filepath.Join(currDir, "projects", group.Name))
+		err = os.Chdir(filepath.Join(currDir, "projects", getGroupPath(group)))
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -76,15 +86,10 @@ func (cloner *Cloner) CloneAll() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	// fmt.Println("\n\nYou wanted these projects:")
-	// for _, g := range projects {
-	// 	fmt.Println(g.Name)
-	// }
 }
 
 func (cloner *Cloner) getAllGroups() []group {
-	resp, err := dhttp.Getter(cloner.apiURL+"/groups", &cloner.token)
+	resp, err := dhttp.Getter(cloner.apiURL+"/groups?per_page=100", &cloner.token)
 	if err != nil {
 		fmt.Errorf(err.Error())
 	}
@@ -137,6 +142,15 @@ func getUserWantedGroups(allGroups []group) []group {
 	return userWantedGroups
 }
 
+func getGroupPath(grp group) string {
+	groupWebURL := grp.WebURL
+	splittedGroupWebURL := strings.Split(groupWebURL, "/groups/")
+	if len(splittedGroupWebURL) < 2 {
+		return ""
+	}
+	return splittedGroupWebURL[1]
+}
+
 func printGroups(groups []group) {
 	fmt.Println("Index\tPoject Name\tProject URL")
 	for index, group := range groups {
@@ -146,7 +160,7 @@ func printGroups(groups []group) {
 
 func (cloner *Cloner) getProjectsOfGroup(wantedGroup group) []project {
 	projects := make([]project, 0)
-	path := fmt.Sprintf("/groups/%d/projects", wantedGroup.ID)
+	path := fmt.Sprintf("/groups/%d/projects?per_page=100", wantedGroup.ID)
 	// fmt.Println(path)
 	resp, err := dhttp.Getter(cloner.apiURL+path, &cloner.token)
 	if err != nil {
